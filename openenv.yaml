@@ -1,0 +1,29 @@
+name: fraud-detection-decision-environment
+description: >
+  OpenEnv-compatible reinforcement learning environment for detecting
+  fraudulent financial transactions in a fintech workflow.
+entry_point: fraud_env.environment:FraudEnvironment
+action_space:
+  type: discrete
+  size: 2
+  mapping:
+    0: approve_transaction
+    1: flag_as_fraud
+observation_space:
+  type: object
+  properties:
+    amount:
+      type: integer
+      minimum: 10
+      maximum: 1000
+    location_risk:
+      type: integer
+      enum: [0, 1]
+    frequency:
+      type: integer
+      minimum: 1
+      maximum: 10
+    reward:
+      type: number
+    done:
+      type: boolean
