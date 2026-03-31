@@ -1,3 +1,14 @@
+---
+title: Fraud Detection Decision Environment
+emoji: 🛡️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+license: mit
+---
+
 # Fraud Detection Decision Environment
 
 ## Overview
