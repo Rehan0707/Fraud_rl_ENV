@@ -18,6 +18,17 @@ app = FastAPI(
 environment = FraudEnvironment()
 
 
+@app.get("/")
+def root() -> dict:
+    return {
+        "message": "Welcome to the Fraud Detection Decision Environment",
+        "status": "Running",
+        "docs": "/docs",
+        "endpoints": ["/health", "/reset", "/step"],
+        "openenv_compliant": True,
+    }
+
+
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok"}
