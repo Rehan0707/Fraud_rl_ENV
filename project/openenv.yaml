@@ -1,0 +1,40 @@
+name: ai-medical-decision-environment
+version: "1.0.0"
+entrypoint: env.env:AIMedicalDecisionEnv
+description: >
+  Production-ready OpenEnv project for disease classification, medicine suggestion,
+  urgency prediction, and health advice generation from patient symptoms.
+observation_space:
+  symptoms: string
+  age: integer
+  severity:
+    type: enum
+    values: [low, medium, high]
+action_space:
+  disease_prediction: string
+  medicine_suggestion: string
+  urgency_level:
+    type: enum
+    values: [low, medium, high]
+  advice_text: string
+reward:
+  disease_correct: 0.3
+  medicine_correct: 0.3
+  urgency_correct: 0.2
+  advice_quality: 0.2
+  dangerous_advice: -0.5
+  completely_wrong: -1.0
+  output_range: [0.0, 1.0]
+tasks:
+  - id: task_1_easy
+    difficulty: easy
+    objective: Only classify disease
+    grader: env.graders:grade_task_1
+  - id: task_2_medium
+    difficulty: medium
+    objective: Classify disease and suggest medicine
+    grader: env.graders:grade_task_2
+  - id: task_3_hard
+    difficulty: hard
+    objective: Full pipeline with disease, medicine, urgency, and advice
+    grader: env.graders:grade_task_3

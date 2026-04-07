@@ -1,7 +1,10 @@
-name: fraud-detection-decision-environment
+name: fraud_rl
 description: >
-  OpenEnv-compatible reinforcement learning environment for detecting
-  fraudulent financial transactions in a fintech workflow.
+  Standardized RL environment for Detecting Fraudulent Transactions. 
+  Simulates a real-world fintech workflow with risk markers (amount, location, frequency).
+version: 1.0.0
+standard_version: 1.0.0
+tags: ["fraud", "fintech", "classification", "meta-pytorch-hackathon"]
 entry_point: fraud_env.environment:FraudEnvironment
 action_space:
   type: discrete
