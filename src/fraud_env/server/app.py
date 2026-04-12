@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fraud_env.environment import FraudEnvironment
 from fraud_env.models import FraudAction
