@@ -1,4 +1,4 @@
-"""Training script for the fraud detection DQN agent."""
+"""Training script for the Fraud Investigator Simulator DQN agent."""
 
 import random
 import sys
@@ -16,7 +16,6 @@ if str(SRC) not in sys.path:
 
 from fraud_env.environment import FraudEnvironment
 from fraud_env.model import DQN, preprocess_observation
-from fraud_env.models import FraudAction
 
 # Hyperparameters
 GAMMA = 0.99
@@ -53,14 +52,13 @@ def train():
     memory = ReplayMemory(MEMORY_SIZE)
     epsilon = EPS_START
 
-    best_score = -float('inf')
-
     for episode in range(EPISODES):
         obs = env.reset()
-        state = preprocess_observation(obs.state)
+        state = preprocess_observation(obs)
         total_reward = 0
+        done = False
         
-        while not obs.done:
+        while not done:
             # Epsilon-greedy action selection
             if random.random() < epsilon:
                 action_idx = random.randint(0, 1)
@@ -68,19 +66,18 @@ def train():
                 with torch.no_grad():
                     action_idx = policy_net(state.unsqueeze(0)).argmax().item()
 
-            action = FraudAction(action=action_idx)
-            obs = env.step(action)
-            next_state = preprocess_observation(obs.state) if not obs.done else None
-            reward = obs.reward
+            # Take Step
+            next_obs, reward, done, info = env.step(action_idx)
             
-            memory.push(state, action_idx, reward, next_state, obs.done)
+            next_state = preprocess_observation(next_obs) if not done else None
+            
+            memory.push(state, action_idx, reward, next_state, done)
             state = next_state
             total_reward += reward
 
             # Perform optimization step
             if len(memory) >= BATCH_SIZE:
                 transitions = memory.sample(BATCH_SIZE)
-                # Unzip transitions
                 b_state, b_action, b_reward, b_next_state, b_done = zip(*transitions)
                 
                 b_state = torch.stack(b_state)
@@ -88,10 +85,8 @@ def train():
                 b_reward = torch.tensor(b_reward, dtype=torch.float32)
                 b_done = torch.tensor(b_done, dtype=torch.float32)
                 
-                # Compute Q values
                 current_q = policy_net(b_state).gather(1, b_action).squeeze(1)
                 
-                # Compute V values for next states
                 max_next_q = torch.zeros(BATCH_SIZE)
                 non_final_mask = torch.tensor([s is not None for s in b_next_state], dtype=torch.bool)
                 if non_final_mask.any():
@@ -99,7 +94,6 @@ def train():
                     max_next_q[non_final_mask] = target_net(non_final_next_states).max(1)[0].detach()
                 
                 expected_q = b_reward + (GAMMA * max_next_q * (1 - b_done))
-
                 loss = nn.MSELoss()(current_q, expected_q)
                 
                 optimizer.zero_grad()
@@ -122,3 +116,4 @@ def train():
 
 if __name__ == "__main__":
     train()
+

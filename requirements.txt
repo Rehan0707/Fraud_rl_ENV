@@ -5,3 +5,6 @@ pydantic
 torch
 numpy
 openai
+matplotlib
+pandas
+tqdm

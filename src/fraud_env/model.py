@@ -17,12 +17,18 @@ class DQN(nn.Module):
         return self.fc3(x)
 
 def preprocess_observation(obs: dict) -> torch.Tensor:
-    """Convert observation dictionary to normalized tensor."""
-    # amount: 10-1000 -> normalize to [0, 1]
-    amount = (obs.get("amount", 0) - 10) / 990.0
+    """
+    Convert observation dictionary to normalized tensor.
+    Adapts the new transaction structure to the model's expected 3-feature input.
+    """
+    transaction = obs.get("transaction", obs)
+    
+    # amount: 5-5000 -> normalize to [0, 1]
+    amount = (transaction.get("amount", 0) - 5) / 4995.0
     # location_risk: 0 or 1
-    location_risk = float(obs.get("location_risk", 0))
-    # frequency: 1-10 -> normalize to [0, 1]
-    frequency = (obs.get("frequency", 1) - 1) / 9.0
+    location_risk = float(transaction.get("location_risk", 0))
+    # frequency: 1-15 -> normalize to [0, 1]
+    frequency = (transaction.get("frequency_24h", 1) - 1) / 14.0
     
     return torch.tensor([amount, location_risk, frequency], dtype=torch.float32)
+

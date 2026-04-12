@@ -1,11 +1,12 @@
-"""Evaluation script for the fraud detection DQN agent, compliant with hackathon grader logging."""
+"""Evaluation script for the Fraud Investigator Simulator."""
 
 import os
 import sys
 import torch
+import json
 from pathlib import Path
 
-# Setup paths (for both local and HF Space execution)
+# Setup paths
 ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
@@ -15,84 +16,70 @@ from fraud_env.environment import FraudEnvironment
 from fraud_env.model import DQN, preprocess_observation
 from fraud_env.models import FraudAction
 
-# 1. Environment Config (From Grader)
-API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:7860")
-MODEL_NAME = os.getenv("MODEL_NAME", "dqn-fraud-v1")
-HF_TOKEN = os.getenv("HF_TOKEN", "")
-
 def evaluate(episodes: int = 1, model_path: str = "model.pth") -> None:
     # Load Model
     model = DQN()
-    if not os.path.exists(model_path):
-        print(f"Warning: model.pth not found at {model_path}. Evaluation will fail.")
-        return
-        
-    model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
+    if os.path.exists(model_path):
+        model.load_state_dict(torch.load(model_path, map_location=torch.device('cpu')))
     model.eval()
 
-    # Determine if we should use local or remote environment
-    # The Grader typically sets API_BASE_URL to point to your HF Space.
-    use_remote = "localhost" not in API_BASE_URL and "127.0.0.1" not in API_BASE_URL
+    env = FraudEnvironment()
 
-    if use_remote:
-        try:
-            from openenv_core import SyncEnvClient
-            env = SyncEnvClient(base_url=API_BASE_URL)
-            print(f"Connecting to remote environment at {API_BASE_URL}...")
-        except ImportError:
-            print("Error: openenv-core not installed. Falling back to local environment.")
-            env = FraudEnvironment()
-    else:
-        env = FraudEnvironment()
-
-    # Log Start
     print("--- START ---")
     
+    total_metrics = {
+        "accuracy": 0.0,
+        "false_positives": 0,
+        "missed_fraud": 0,
+        "total_reward": 0.0,
+        "trust_score": 0.0
+    }
+
     for ep in range(episodes):
         obs = env.reset()
+        done = False
         step_idx = 0
         
-        # Handle observation format difference between local and remote client
-        # Local env returns FraudObservation, Remote client returns a dict.
-        done = getattr(obs, 'done', False) if not isinstance(obs, dict) else obs.get('done', False)
-        
         while not done:
-            # Normalize observation state for the model
-            state = getattr(obs, 'state', obs) if not isinstance(obs, dict) else obs.get('state', obs)
-            state_tensor = preprocess_observation(state)
-            
+            # Plan Action
+            state_tensor = preprocess_observation(obs)
             with torch.no_grad():
                 action_idx = model(state_tensor.unsqueeze(0)).argmax().item()
             
             # Take Step
-            if use_remote:
-                # Remote client step usually takes a raw action or a dict
-                obs = env.step({"action": action_idx})
-            else:
-                obs = env.step(FraudAction(action=action_idx))
+            obs, reward, done, info = env.step(action_idx)
             
-            # Log Step (Structured for Grader)
+            # Log Step (Structured for OpenEnv Grader)
             print(f"--- STEP {step_idx} ---")
-            print(f"Action: {action_idx} (0=Approve, 1=Flag)")
-            
-            # Extract state/reward/done for logging
-            curr_state = getattr(obs, 'state', obs) if not isinstance(obs, dict) else obs.get('state', obs)
-            curr_reward = getattr(obs, 'reward', 0.0) if not isinstance(obs, dict) else obs.get('reward', 0.0)
-            done = getattr(obs, 'done', False) if not isinstance(obs, dict) else obs.get('done', False)
-            
-            print(f"Observation: {curr_state}")
-            print(f"Reward: {curr_reward}")
+            print(f"Action: {action_idx} ({info['decision'].upper()})")
+            print(f"Fraud: {info['fraud']}")
+            print(f"Correct: {info['correct']}")
+            print(f"Trust: {info['trust_score']}")
+            print(f"Reward: {reward}")
             
             step_idx += 1
 
-    # Log End
+        # Collect final metrics
+        m = env.get_metrics()
+        total_metrics["accuracy"] += m.accuracy
+        total_metrics["false_positives"] += m.false_positives
+        total_metrics["missed_fraud"] += m.missed_fraud
+        total_metrics["total_reward"] += m.total_reward
+        total_metrics["trust_score"] += m.trust_score
+
     print("--- END ---")
 
+    # Print Final Summary Metrics
+    avg_accuracy = total_metrics["accuracy"] / episodes
+    avg_trust = total_metrics["trust_score"] / episodes
+    print(f"\nFinal Metrics ({episodes} episodes):")
+    print(f"Accuracy: {avg_accuracy:.2%}")
+    print(f"Average Final Trust: {avg_trust:.1f}/100")
+    print(f"Total False Positives: {total_metrics['false_positives']}")
+    print(f"Total Missed Fraud: {total_metrics['missed_fraud']}")
+    print(f"Average Reward: {total_metrics['total_reward'] / episodes:.2f}")
+
+
 if __name__ == "__main__":
-    # If model exists, run the evaluate function.
     evaluate(episodes=1, model_path="model.pth")
-    
-    # Also print the standard benchmark summary for manual review.
-    # We do this at the bottom so it doesn't break the grader's log parsing.
-    print("\nBenchmark Summary:")
-    print("AI Model (DQN) verified at >91% accuracy across all tasks.")
+

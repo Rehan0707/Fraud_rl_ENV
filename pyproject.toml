@@ -3,9 +3,10 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fraud_rl_env"
-version = "0.1.0"
-description = "FastAPI-based fraud detection reinforcement learning environment."
+name = "fraud_investigator_simulator"
+version = "1.2.0"
+description = "High-stakes Fraud Investigator Simulator - Real-Time AI Decision Environment."
+
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

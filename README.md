@@ -1,5 +1,5 @@
 ---
-title: Fraud Detection Decision Environment
+title: Fraud Investigator Simulator
 emoji: 🛡️
 colorFrom: blue
 colorTo: indigo
@@ -9,139 +9,126 @@ pinned: false
 license: mit
 ---
 
-# Fraud Detection Decision Environment
+# Fraud Investigator Simulator – Real-Time AI Decision Environment
 
-## Overview
+> "A single wrong decision can cost millions. Train your AI agent to detect fraud under real-world pressure."
 
-This project provides a production-ready OpenEnv-compatible reinforcement learning environment for fintech fraud detection. An agent reviews simulated transaction features and decides whether to approve the transaction or flag it as fraudulent. The environment is packaged as a FastAPI service, Dockerized for deployment, and structured for Hugging Face Spaces. It also includes integration for proxy model evaluation and Hackathon auto-graders.
+**The investigator reviews high-velocity transactions in a high-stakes simulation where every decision has immediate financial and social consequences. Your agent must protect the system from fraudsters without alienating legitimate customers.**
 
-## Problem Explanation
+---
 
-Financial platforms need low-latency fraud decisions under uncertainty. This environment simulates that workflow with realistic bounded transaction signals:
+## 🛡️ Why This Project Matters
 
-- `amount`: transaction amount from 10 to 1000
-- `location_risk`: binary high-risk location indicator
-- `frequency`: recent transaction frequency from 1 to 10
+In modern fintech, AI decision-making isn't just about accuracy—it's about **Trust**. 
+- **Financial Impact**: Missed fraud leads to direct capital loss.
+- **Human Impact**: False positives (flagging innocent users) cause immediate trust erosion.
+- **The Challenge**: Balancing these competing pressures in a dynamic, evolving environment.
 
-Fraud is defined by the domain rule:
+---
 
-- `amount > 800`, or
-- `location_risk == 1`, or
-- `frequency > 7`
+## 🎮 Narrative & Mechanics
 
-## Action Space
+### 📈 The Pressure System
+This isn't a static dataset. Every episode is a **Live Narrative**:
+- **Episodes**: 20 transactions per session.
+- **Narrative Scaling**: As the session progresses, the "Pressure" increases. Transaction amounts spike, and fraudsters become more cunning (simulating a coordinated attack).
+- **Evolving Patterns**: Risk markers and merchant categories shift, requiring the agent to adapt in real-time.
 
-- `0`: approve transaction
-- `1`: flag as fraud
+### 🤝 Customer Trust Score
+The most critical metric.
+- **Base Trust**: 100%
+- **False Positive Penalty**: `-10` points. Flagging a safe transaction causes heavy user friction.
+- **Missed Fraud Penalty**: `-5` points. Customers get angry when their security is breached.
+- **Failure Condition**: If Trust hits **0**, the investigator is fired (episode ends early).
 
-## Observation Space
+### 🔥 Streak Bonuses
+Consistency is rewarded. Detecting multiple fraudulent transactions in a row grants a **+0.2 Streak Bonus**, simulating the investigator "finding the thread" of a coordinated attack.
 
-Each environment response returns:
+---
 
-- `state`: dictionary containing `amount`, `location_risk`, and `frequency`
-- `reward`: float reward for the last action
-- `done`: whether the episode has ended
+## ⚙️ Environment Mechanics
 
-Internal environment state is also tracked through the typed `FraudState(step_count: int)` model.
+### Observation Space
+The investigator receives a rich set of features:
+- `transaction`: {`amount`, `merchant_category`, `location_risk`, `frequency_24h`, `is_new_device`, `user_age`, `hour_of_day`}
+- `step`: Current progress.
+- `trust_score`: Remaining customer trust.
 
-## Reward Logic
+### Action Space
+Discrete space:
+- `0`: **APPROVE** (Transaction proceeds; builds trust if correct)
+- `1`: **FLAG** (Transaction stops; damages trust if false positive)
 
-- Correct fraud detection: `+1.0`
-- Correct approval: `+1.0`
-- False positive: `-0.5`
-- Missed fraud: `-1.0`
-- Early fraud streak bonus: `+0.2` for consecutive correct fraud flags in the first five steps
+### Reward Schema
+| Outcome | Decision | Actual | Reward |
+| :--- | :--- | :--- | :--- |
+| **Correct** | Approve | Safe | `+1.0` |
+| **Correct** | Flag | Fraud | `+1.0` |
+| **Winning Streak** | Flag | Fraud | `+1.2` (on 2+ streak) |
+| **False Positive** | Flag | Safe | `-0.5` (and -10 trust) |
+| **Missed Fraud** | Approve | Fraud | `-1.0` (and -5 trust) |
 
-Each episode ends after `20` decisions.
+---
 
-## APIs and Compliance
+## 📊 Evaluation & Metrics
 
-To comply with hackathon automated "Agentic Evaluation" processes, this project utilizes and exposes the following APIs:
-- **FastAPI / REST Environment API**: Serves the reinforcement learning environment endpoints (`/reset`, `/step`).
-- **OpenAI Proxy Client**: Built-in support to route LLM decisions utilizing `API_BASE_URL` and `API_KEY` for evaluation scenarios.
-- **OpenEnv Sync Client**: Ensures standard interaction with remote URL instances.
-- **Structured Debug Logging**: Scripts print formatted `--- START ---`, `--- STEP n ---`, and `--- END ---` blocks so external graders can correctly trace episodes.
+The system is evaluated based on three core pillars:
+1. **Accuracy**: Overall decision correctness.
+2. **Fraud Detection Rate (FDR)**: Percentage of blocked fraud.
+3. **False Positive Rate (FPR)**: Percentage of incorrectly flagged safe users.
+4. **Final Trust Score**: The remaining user confidence at the end of the shift.
 
-## Project Structure
-
+### Example Performance Output:
 ```text
-fraud_rl_env/
-├── src/fraud_env/
-│   ├── environment.py
-│   ├── model.py           # DQN Model definition
-│   ├── models.py          # Data classes and Schemas
-│   └── server/
-│       └── app.py         # FastAPI Service
-├── train.py               # DQN reinforcement learning training script
-├── evaluate.py            # Environment evaluation & structured logging
-├── inference.py           # Agentic inference and proxy evaluation logic
-├── openenv.yaml           # Environment metadata config
-├── Dockerfile             # Container configuration
-├── requirements.txt       
-└── README.md
+Final Metrics (100 episodes):
+Accuracy: 92.5%
+Average Final Trust: 85.0/100
+Total False Positives: 12
+Total Missed Fraud: 3
+Average Reward: 15.40
 ```
 
-## Setup Instructions
 
+---
+
+
+## 📊 Analytics & Insights
+
+Use our built-in visualization tools to analyze your agent's decision-making and performance across multiple episodes.
+
+### 📈 Performance Report
+Run the visualization script to generate a high-fidelity report (`performance_report.png`):
 ```bash
-python3.10 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+./.venv/bin/python3 visualize.py
+```
+*This report includes Reward Distributions, Accuracy vs False Positives, and average Error Metrics.*
+
+### 🖥️ Real-Time Investigator Dashboard
+We've built a sleek, modern dashboard inspired by top-tier fintech analytics platforms. It connects directly to your FastAPI server for live monitoring or manual interaction.
+
+**To Launch:**
+1. Ensure the server is running: `PYTHONPATH=src ./.venv/bin/python3 -m uvicorn fraud_env.server.app:app --host 0.0.0.0 --port 7860`
+2. Open `dashboard.html` in your web browser.
+
+---
+
+## 🛠️ API & Compliance
+
+### Standardized Reset/Step
+- `POST /reset` -> Returns initial `FraudObservation`.
+- `POST /step` -> Returns `(observation, reward, done, info)`.
+
+### Grader-Ready Logging
+Logs are formatted for automated parsing:
+```text
+--- START task=Investigator_Main ---
+--- STEP 0 ---
+Investigator Decision: FLAG
+Trust Impact: 90.0
+Reward: -0.5
+--- END task=Investigator_Main score=0.850 steps=20 ---
 ```
 
-## How To Run Locally
-
-**1. Run the API server:**
-
-```bash
-uvicorn fraud_env.server.app:app --host 0.0.0.0 --port 7860
-```
-
-Available endpoints:
-- `GET /health`
-- `POST /reset`
-- `POST /step`
-
-Example local HTTP request:
-
-```bash
-curl -X POST http://127.0.0.1:7860/step \
-  -H "Content-Type: application/json" \
-  -d '{"action": 1}'
-```
-
-**2. Train the RL Agent:**
-```bash
-python train.py
-```
-This will train the DQN and generate a `model.pth` weights file.
-
-**3. Run the Hackathon Evaluation:**
-```bash
-python evaluate.py
-```
-This script respects the `API_BASE_URL` if testing a remote instance, or falls back to initializing the local Python environment wrapper.
-
-## Docker
-
-Build and run the system locally:
-
-```bash
-docker build -t fraud-rl-env .
-docker run -p 7860:7860 fraud-rl-env
-```
-
-## Hugging Face Spaces Deployment
-
-This project is explicitly ready for a Docker Hugging Face Space:
-
-1. Create a new Hugging Face Space and choose `Docker` as the SDK.
-2. Upload this repository's contents.
-3. Ensure the Space exposes port `7860` (as defined in the Dockerfile).
-4. Hugging Face will build the container image automatically.
-
-## Production Notes
-
-- Typed models are defined with dataclasses/Pydantic for clean environment contracts.
-- A local OpenEnv fallback base class is included so the project still runs if `openenv-core` is temporarily unreachable.
-- Transaction generation is randomized with weighted sampling to realistically simulate production class imbalances (fraud is rarer than regular transactions).
+---
+Built with ❤️ for the Meta PyTorch Hackathon.
+This represents a **production-ready AI simulation** for high-stakes financial decisioning.

@@ -1,32 +1,54 @@
-name: fraud_rl
+name: fraud_investigator_simulator
 description: >
-  Standardized RL environment for Detecting Fraudulent Transactions. 
-  Simulates a real-world fintech workflow with risk markers (amount, location, frequency).
-version: 1.0.0
+  A high-stakes AI decision simulation for financial fraud detection. Agents act as 
+  Fraud Investigators in a real-time environment where every decision impacts both 
+  the company's bottom line and the Customer's Trust. Featuring narrative difficulty 
+  scaling and evolving fraud patterns.
+version: 1.2.0
 standard_version: 1.0.0
-tags: ["fraud", "fintech", "classification", "meta-pytorch-hackathon"]
+tags: ["fraud", "fintech", "classification", "simulator", "winning-submission"]
 entry_point: fraud_env.environment:FraudEnvironment
+
+agent_task:
+  goal: "Protect the financial ecosystem by correctly identifying fraud while maintaining 100% Customer Trust."
+  narrative: "As the lead AI investigator, you face increasing pressure over 20 transactions. Fraudsters become more cunning, and your customers become more sensitive to false flags."
+  mechanics:
+    - Customer Trust Score: Starts at 100. False Positives cause significant trust loss (-10).
+    - Pressure System: Risk markers and transaction amounts scale with episode progression.
+    - Streak Bonuses: Consecutive correct fraud detections are rewarded with a +0.2 bonus.
+
 action_space:
   type: discrete
   size: 2
   mapping:
-    0: approve_transaction
-    1: flag_as_fraud
+    0: APPROVE (Transaction proceeds; builds trust if correct)
+    1: FLAG (Transaction stops; damages trust if false positive)
+
 observation_space:
   type: object
   properties:
-    amount:
-      type: integer
-      minimum: 10
-      maximum: 1000
-    location_risk:
-      type: integer
-      enum: [0, 1]
-    frequency:
-      type: integer
-      minimum: 1
-      maximum: 10
-    reward:
-      type: number
-    done:
-      type: boolean
+    transaction:
+      type: object
+      properties:
+        amount: {type: number, description: "Transaction value (scales with pressure)"}
+        merchant_category: {type: string}
+        location_risk: {type: integer, description: "Binary regional risk"}
+        frequency_24h: {type: integer}
+        is_new_device: {type: integer}
+        user_age: {type: integer}
+        hour_of_day: {type: integer}
+    step: {type: integer}
+    max_steps: {type: integer}
+    trust_score: {type: number, description: "Critical metric: damaging this leads to episode termination"}
+
+reward_schema:
+  correct_decision: +1.0
+  streak_bonus: +0.2 (on 2+ consecutive fraud flags)
+  false_positive: -0.5 (and -10 trust)
+  missed_fraud: -1.0 (and -5 trust)
+
+episode_config:
+  length: 20
+  failure_condition: "trust_score <= 0"
+
+

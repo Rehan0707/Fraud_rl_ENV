@@ -1,21 +1,28 @@
 """Typed models used by the fraud detection environment."""
 
 from dataclasses import dataclass
-from typing import Dict
+from typing import Dict, Any, List
 
 
 @dataclass
 class FraudAction:
-    action: int
+    action: int  # 0: APPROVE, 1: FLAG
 
 
 @dataclass
 class FraudObservation:
-    state: Dict[str, int]
-    reward: float
-    done: bool
+    transaction: Dict[str, Any]
+    step: int
+    max_steps: int
+    trust_score: float
 
 
 @dataclass
-class FraudState:
-    step_count: int
+class FraudMetrics:
+    accuracy: float
+    false_positives: int
+    missed_fraud: int
+    total_reward: float
+    trust_score: float
+
+

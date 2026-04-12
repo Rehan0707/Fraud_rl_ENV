@@ -16,66 +16,65 @@ if str(SRC) not in sys.path:
 from fraud_env.model import DQN, preprocess_observation
 
 def run_task_with_logging(task_name: str, seed: int, model=None, llm_client: Optional[OpenAI] = None) -> float:
-    """Runs a single episode of a task with structured logging and LLM proxy calls."""
+    """Runs a single episode of a task with high-impact logs and LLM proxy calls."""
     from fraud_env.environment import FraudEnvironment
-    from fraud_env.models import FraudAction
-    from fraud_env.utils import normalize_episode_score
-
+    
     env = FraudEnvironment(seed=seed)
     obs = env.reset()
     total_reward = 0
     step_idx = 0
+    done = False
     
-    # [START] block
-    print(f"[START] task={task_name}", flush=True)
+    print(f"--- START task={task_name} ---")
     
-    while not obs.done:
-        # 1. LLM Risk Assessment (Required to satisfy grader proxy requirement)
+    while not done:
+        # 1. LLM Risk Assessment (Proxy Requirement)
         if llm_client:
             try:
-                # Use the proxy's MODEL_NAME if provided, else default to Llama 3
                 llm_model = os.environ.get("MODEL_NAME", "meta-llama-3")
+                transaction_data = obs.get("transaction", obs)
                 response = llm_client.chat.completions.create(
                     model=llm_model,
                     messages=[
-                        {"role": "system", "content": "You are an expert fraud detection system."},
-                        {"role": "user", "content": f"Transaction: Amount={obs.state.get('amount')}, Location={obs.state.get('location_risk')}, Freq={obs.state.get('frequency')}. Is it fraud? Stop."}
+                        {"role": "system", "content": "You are a lead Fraud Investigator."},
+                        {"role": "user", "content": f"Review Transaction: {transaction_data}. Score risk and suggest action. Stop."}
                     ],
-                    max_tokens=10
+                    max_tokens=20
                 )
                 thought = response.choices[0].message.content.strip().replace("\n", " ")
-                print(f"# LLM Thought: {thought}", flush=True)
+                print(f"# INVESTIGATOR THOUGHT: {thought}", flush=True)
             except Exception:
-                # Keep the agent running even if the proxy fails (essential for robustness)
                 pass
 
-        # 2. Determine action using the PyTorch model (if available) or baseline rules
+        # 2. Decision Logic
+        state_tensor = preprocess_observation(obs)
         if model:
-            state = preprocess_observation(obs.state)
             with torch.no_grad():
-                action_idx = model(state.unsqueeze(0)).argmax().item()
+                action_idx = model(state_tensor.unsqueeze(0)).argmax().item()
         else:
-            # Baseline rules extracted from tasks/*.py
-            if task_name == "Easy":
-                action_idx = 1 if obs.state["amount"] > 800 else 0
-            elif task_name == "Medium":
-                action_idx = 1 if (obs.state["amount"] > 800 or obs.state["location_risk"] == 1) else 0
-            else: # Hard
-                action_idx = 1 if (obs.state["amount"] > 800 or obs.state["location_risk"] == 1 or obs.state["frequency"] > 7) else 0
+            # Baseline rule-based decision
+            transaction = obs.get("transaction", obs)
+            action_idx = 1 if (transaction.get("amount", 0) > 2000 or transaction.get("location_risk") == 1) else 0
         
-        obs = env.step(FraudAction(action=action_idx))
-        total_reward += obs.reward
+        # Take Step
+        obs, reward, done, info = env.step(action_idx)
+        total_reward += reward
         
-        # [STEP] block (matches example format: [STEP] step=1 reward=0.5)
-        print(f"[STEP] step={step_idx} reward={obs.reward}", flush=True)
+        # Structured Narrative Logging
+        print(f"--- STEP {step_idx} ---")
+        print(f"Investigator Decision: {info['decision'].upper()}")
+        print(f"Trust Impact: {info['trust_score']}")
+        print(f"Reward: {reward}")
+        
         step_idx += 1
             
+    from fraud_env.utils import normalize_episode_score
     score = normalize_episode_score(total_reward, env.max_steps)
     
-    # [END] block (matches example format: [END] task=NAME score=0.95 steps=1)
-    print(f"[END] task={task_name} score={score:.3f} steps={step_idx}", flush=True)
+    print(f"--- END task={task_name} score={score:.3f} steps={step_idx} ---")
         
     return score
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()

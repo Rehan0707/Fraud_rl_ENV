@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Investigator Simulator | Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #05070a;
+            --card-bg: rgba(16, 20, 30, 0.7);
+            --accent-blue: #0ea5e9;
+            --accent-red: #ef4444;
+            --accent-green: #10b981;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(circle at 10% 10%, rgba(14, 165, 233, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 90% 90%, rgba(239, 68, 68, 0.05) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.5rem;
+            background: linear-gradient(to right, var(--text-main), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        /* Transaction Display */
+        .transaction-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .label {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+        }
+
+        .value {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .value.highlight {
+            color: var(--accent-blue);
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+        }
+
+        /* Metrics Display */
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        /* Controls */
+        .controls {
+            margin-top: 3rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            flex: 1;
+            padding: 1.25rem;
+            border-radius: 1rem;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-approve {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-approve:hover {
+            background: var(--accent-green);
+            color: white;
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-flag {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-flag:hover {
+            background: var(--accent-red);
+            color: white;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: var(--text-dim);
+            border: 1px solid var(--glass-border);
+            margin-top: 1rem;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .btn-reset:hover {
+            color: var(--text-main);
+            border-color: var(--text-main);
+        }
+
+        /* Progress Bars */
+        .progress-container {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--accent-blue);
+            transition: width 0.5s ease;
+        }
+
+        .trust-bar {
+            background: linear-gradient(to right, var(--accent-red), var(--accent-green));
+        }
+
+        /* Narrative Log */
+        .log {
+            margin-top: 2rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #6ee7b7;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            margin-bottom: 0.25rem;
+            border-left: 2px solid #059669;
+            padding-left: 0.5rem;
+        }
+
+        footer {
+            margin-top: 4rem;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.875rem;
+        }
+
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* Mobile specific */
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            h1 { font-size: 1.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Aegis AI</h1>
+                <p style="color: var(--text-dim); margin-top: 0.25rem;">Fraud Investigator Simulator</p>
+            </div>
+            <div class="status-badge pulse">● SYSTEM LIVE</div>
+        </header>
+
+        <div class="grid">
+            <!-- Main Transaction Panel -->
+            <div class="card">
+                <div class="section-title">Current Transaction Analysis</div>
+                <div id="transaction-content">
+                    <div class="transaction-info">
+                        <div class="info-item">
+                            <span class="label">Amount</span>
+                            <span class="value highlight" id="tx-amount">$0.00</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Merchant Category</span>
+                            <span class="value" id="tx-category">Loading...</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Location Risk</span>
+                            <span class="value" id="tx-location">Normal</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="label">Frequency (24h)</span>
+                            <span class="value" id="tx-freq">0</span>
+                        </div>
+                    </div>
+
+                    <div class="controls">
+                        <button class="btn-approve" onclick="takeAction(0)">Approve</button>
+                        <button class="btn-flag" onclick="takeAction(1)">Flag Fraud</button>
+                    </div>
+                </div>
+
+                <div id="game-over" style="display: none; text-align: center; padding: 2rem;">
+                    <h2 id="final-status-msg" style="font-size: 2rem; margin-bottom: 1rem;">SESSION COMPLETE</h2>
+                    <p id="final-summary" style="color: var(--text-dim); margin-bottom: 2rem;"></p>
+                    <button class="btn-approve" style="max-width: 300px;" onclick="resetGame()">Start New Shift</button>
+                </div>
+            </div>
+
+            <!-- Metrics Column -->
+            <div class="card">
+                <div class="section-title">Shift Performance</div>
+                <div class="metrics-list">
+                    <div class="metric-card">
+                        <div class="metric-label">Efficiency (Step)</div>
+                        <div class="metric-value" id="m-step">0/20</div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="step-progress" style="width: 0%"></div>
+                    </div>
+
+                    <div class="metric-card" style="margin-top: 1rem;">
+                        <div class="metric-label">Customer Trust</div>
+                        <div class="metric-value" id="m-trust">100.0%</div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar trust-bar" id="trust-progress" style="width: 100%"></div>
+                    </div>
+
+                    <div class="metric-card" style="margin-top: 1rem;">
+                        <div class="metric-label">Accuracy</div>
+                        <div class="metric-value" id="m-accuracy">0.0%</div>
+                    </div>
+                    
+                    <div class="metric-card" style="margin-top: 1rem;">
+                        <div class="metric-label">Total Reward</div>
+                        <div class="metric-value highlight" id="m-reward">0.0</div>
+                    </div>
+                </div>
+
+                <button class="btn-reset" onclick="resetGame()">Force Reset</button>
+            </div>
+        </div>
+
+        <div class="log" id="log-content">
+            <div class="log-entry">Booting investigator kernel...</div>
+            <div class="log-entry">Connecting to FraudSimulator API on localhost:7860...</div>
+        </div>
+
+        <footer>
+            Built with ❤️ for Meta PyTorch Hackathon. Real-time RL Inference enabled.
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:7860";
+        let isGameOver = false;
+
+        async function resetGame() {
+            try {
+                const response = await fetch(`${API_BASE}/reset`, { method: 'POST' });
+                const data = await response.json();
+                updateUI(data);
+                addLog("Session Reset Successful. Waiting for transaction...");
+                isGameOver = false;
+                document.getElementById('transaction-content').style.display = 'block';
+                document.getElementById('game-over').style.display = 'none';
+                updateMetrics();
+            } catch (err) {
+                addLog(`Error: Could not connect to API at ${API_BASE}. Ensure server is running.`);
+                console.error(err);
+            }
+        }
+
+        async function takeAction(actionIdx) {
+            if (isGameOver) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/step`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: actionIdx })
+                });
+                const data = await response.json();
+                
+                addLog(`Decision: ${data.info.decision.toUpperCase()} | Correct: ${data.info.correct} | Reward: ${data.reward}`);
+                
+                if (data.done) {
+                    endSession(data);
+                } else {
+                    updateUI(data.observation);
+                    updateMetrics();
+                }
+            } catch (err) {
+                addLog(`Error communicating with API.`);
+                console.error(err);
+            }
+        }
+
+        async function updateMetrics() {
+            try {
+                const response = await fetch(`${API_BASE}/metrics`);
+                const m = await response.json();
+                document.getElementById('m-trust').textContent = `${m.trust_score.toFixed(1)}%`;
+                document.getElementById('trust-progress').style.width = `${m.trust_score}%`;
+                document.getElementById('m-accuracy').textContent = `${(m.accuracy * 100).toFixed(1)}%`;
+                document.getElementById('m-reward').textContent = m.total_reward.toFixed(2);
+            } catch (err) {}
+        }
+
+        function updateUI(obs) {
+            const tx = obs.transaction;
+            document.getElementById('tx-amount').textContent = `$${tx.amount.toFixed(2)}`;
+            document.getElementById('tx-category').textContent = tx.merchant_category.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            document.getElementById('tx-location').textContent = tx.location_risk ? "High Risk Area" : "Normal Area";
+            document.getElementById('tx-freq').textContent = tx.frequency_24h;
+            
+            document.getElementById('m-step').textContent = `${obs.step}/${obs.max_steps}`;
+            document.getElementById('step-progress').style.width = `${(obs.step / obs.max_steps) * 100}%`;
+        }
+
+        function endSession(data) {
+            isGameOver = true;
+            document.getElementById('transaction-content').style.display = 'none';
+            document.getElementById('game-over').style.display = 'block';
+            
+            const m = data.info;
+            document.getElementById('final-summary').innerHTML = `
+                Final Accuracy: ${(m.accuracy * 100).toFixed(1)}%<br>
+                Final Trust: ${m.trust_score.toFixed(1)}/100<br>
+                False Positives: ${m.metrics.false_positives}
+            `;
+            
+            if (m.trust_score <= 0) {
+                document.getElementById('final-status-msg').textContent = "INVESTIGATOR FIRED";
+                document.getElementById('final-status-msg').style.color = "var(--accent-red)";
+            } else {
+                document.getElementById('final-status-msg').textContent = "SHIFT COMPLETE";
+                document.getElementById('final-status-msg').style.color = "var(--accent-green)";
+            }
+            updateMetrics();
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('log-content');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+            log.prepend(entry);
+        }
+
+        // Initialize
+        window.onload = resetGame;
+    </script>
+</body>
+</html>
